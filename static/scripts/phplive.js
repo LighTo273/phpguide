@@ -46,7 +46,8 @@ function run_live_code(e)
 }
 function actual_run_code()
 {
-    if( $.trim(getCode()) == '') return false;
+	var code = $.trim(getCode());
+    if( code == '' || code == '<?php' || code == '<?hh' ) return false;
     document.forms["sandboxform"].submit();
 }
 
@@ -113,7 +114,7 @@ function dropData(status)
     var content = $('#xmlFrame')[0].contentWindow.document.body.innerHTML; 
     content = content.split(';;;;;;;;;;;;;;;;;;;;;;;;;'); 
     delete content[content.length-1] ; 
-    $('#sandboxresponse').html(nl2br(content.join('')));
+    $('#sandboxresponse').html(content.join(''));
 }
 
 

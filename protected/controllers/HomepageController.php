@@ -5,16 +5,27 @@ class HomepageController extends PHPGController
    
     public function actionIndex()
     {
-        
-        $qnas = QnaQuestion::model()->findAll(array('limit' => 7));
-        QnaController::storeQnasWithNewAnswersSinceLastVisitInSession($qnas);
+        $posts_per_page = 10;
+        $page = 0;
+
+        if(isset($_GET['page']))
+        {
+            $page = intval($_GET['page']) - 1;
+            if($page < 0) $page = 0;
+            if($page > 100000) $page = 0;
+        }
+
+        $this->mainNavSelectedItem = MainNavBarWidget::POSTS;
+        $this->subNavSelectedItem = SubNavBarWidget::POSTS_NEWEST;
+
+        $totalPages = ceil( Article::model()->count() / $posts_per_page );
 
         $this->render('index' ,
-            array 
-            (
-                'articles'     => Article::model()->byPage(0, 4)->findAll(), 
-                'qnas'         => &$qnas, 
-            )
+            [
+                'articles'     => Article::model()->byPage($page, $posts_per_page)->findAll(),
+                'paginationTotalPages' => $totalPages,
+                'paginationCurrentPage' => $page+1
+            ]
         );
     }
         
@@ -57,12 +68,11 @@ class HomepageController extends PHPGController
     /**
      * Displays site posts as RSS feed 
      */
-    public function actionRss()
+    public function actionRss($showFullPosts = false)
     {
         $this->layout = '/';
-        $this->render('rss' ,array('articles'   => Article::model()->byPage(0, 10)->findAll()));
+        $this->render('rss' ,['articles'   => Article::model()->byPage(0, 10)->publishedOnly()->findAll(), 'showFullPosts' => $showFullPosts]);
     }
-    
     /**
      * Generates sitemap. available only via webcron from localhost
      */
@@ -75,7 +85,7 @@ class HomepageController extends PHPGController
     	/**
     	 * @todo get a better solution
     	 */
-    	if(!YII_DEBUG && Yii::app()->request->getUserHostAddress() !== '::ffff:142.0.252.132' ) return;
+    	if(!YII_DEBUG) return;
 
     	
     	$items = Yii::app()->db->createCommand("
@@ -87,7 +97,7 @@ class HomepageController extends PHPGController
 	    				DATE_FORMAT(`pub_date`,'%Y-%m-%d') as 'lastmod', 
 	    				0.9 as 'priority', 
 	    				'monthly' as 'freq' 
-	    			FROM `blog` WHERE `approved`=1
+	    			FROM `blog` WHERE `approved`= ".Article::APPROVED_PUBLISHED."
     			
     			UNION
     			

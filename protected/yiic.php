@@ -9,5 +9,7 @@ $pathToLocalConfig = __DIR__.'/config/local_config.php';
 if(file_exists($pathToLocalConfig))
     require $pathToLocalConfig;
 
+
+
 require_once($config['params']['PATH_TO_YII'].'/yiic.php');
 

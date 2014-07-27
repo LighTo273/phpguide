@@ -2,14 +2,11 @@
 
 class ArticleController extends PHPGController
 {
-    
-    
-    public $vars;
-
-
     public function actionIndex($article_url)
     {
+        $this->mainNavSelectedItem = MainNavBarWidget::POSTS;
 
+        /** @var Article $article */
         $article = Article::model()->findByAttributes( array('url' => $article_url) );
 
         if($article === null)
@@ -17,7 +14,7 @@ class ArticleController extends PHPGController
             throw new CHttpException(404, $article_url);
         }
         
-        if( '0' === $article->approved && !Yii::app()->user->isGuest && $article->author_id == Yii::app()->user->id)
+        if( Article::APPROVED_NONE === $article->approved && !Yii::app()->user->isGuest && $article->author_id == Yii::app()->user->id)
         {
             Yii::app()->user->setFlash('yourpost', "מדריך זה עדיין לא אושר וניתן לצפיה רק לך");
         }
@@ -30,33 +27,44 @@ class ArticleController extends PHPGController
         $this->metaType    = 'Article';
 		if($this->facebook) $this->facebook['image'] = $article->image;
 
+        if(Yii::app()->user->isGuest || !Yii::app()->user->getUserInstance()->hasMailSubscription)
+        {
+            $currentLoggedInUserEmail = Yii::app()->user->isGuest ? '' : Yii::app()->user->email ?: '';
+            $currentUserFirstName = Yii::app()->user->isGuest ? '' : Yii::app()->user->getUserInstance()->real_name ?: '';
 
-        $this->render('index', array('article' => &$article));
+            /** @var $firstCategory Category */
+            $firstCategory = isset($article->categories, $article->categories[0]) ? $article->categories[0] : null;
+            $articleCategory = $firstCategory ? $firstCategory->name: '';
+        }
+        else
+        {
+            $currentLoggedInUserEmail = null;
+            $currentUserFirstName = null;
+            $articleCategory = null;
+        }
+
+        $hasUserVoted = !Yii::app()->user->isGuest && $article->HasUserVoted(Yii::app()->user->id);
+
+        $article->IncrementViewsCount();
+        $this->MergeJsState([
+            'post' => [
+                'id' => $article->id,
+                'rating' => $article->GetRating(),
+                'hasCurrentUserVoted' => $hasUserVoted
+            ]
+        ]);
+
+        $url = bu('posts/'.$article->id, true);
+        $tweetText = mb_substr($article->title, 0, 139-mb_strlen($url)) . ' '. $url;
+
+        $this->render('index',
+            [
+                'article' => &$article,
+                'currentLoggedInUserEmail' => $currentLoggedInUserEmail,
+                'currentUserFirstName' => $currentUserFirstName,
+                'articleCategory' => $articleCategory,
+                'tweetText' => $tweetText
+            ]
+        );
     }
-    
-    
-    public function actionAll()
-    {
-    	$posts_per_page = 10;
-    	$page = 0;
-   	
-    	if(isset($_GET['page']))
-    	{
-    		$page = intval($_GET['page']) - 1;
-    		if($page < 0) $page = 0;
-    		if($page > 100000) $page = 0;
-    	}
-
-
-    	$this->render('allArticles' ,
-    			array
-    			(
-    					'articles'     => Article::model()->byPage($page, $posts_per_page)->findAll(),
-    					'pagination'   => array('total_pages' => ceil(Article::model()->countByAttributes(array('approved' => 1))/$posts_per_page) , 'current_page' => $page+1)
-    			)
-    	);
-    	
-    }
-
-
 }

@@ -14,10 +14,14 @@
  */
 class Comment extends DTActiveRecord
 {
-	/**
-	 * Returns the static model of the specified AR class.
-	 * @return Comment the static model class
-	 */
+    const APPROVED_PUBLISHED = 2;
+    const APPROVED_NONE = 0;
+
+    /**
+     * Returns the static model of the specified AR class.
+     * @param string $className
+     * @return Comment the static model class
+     */
 	public static function model($className=__CLASS__)
 	{
 		return parent::model($className);
@@ -49,15 +53,16 @@ class Comment extends DTActiveRecord
 	{
             return array(
 				'Article' => array(self::BELONGS_TO, 'Article', 'blogid'),
-                'CommentAuthor' => array(self::BELONGS_TO, 'user', 'authorid')
+                'CommentAuthor' => array(self::BELONGS_TO, 'User', 'authorid')
             );
 	}
-        
-        
-	/**
-	 * fetches the last X comments 
-	 * @param int $limit how many comments to fetch
-	 */
+
+
+    /**
+     * fetches the last X comments
+     * @param int $limit how many comments to fetch
+     * @return $this
+     */
 	public function RecentComments($limit = 8)
 	{
 		$this->getDbCriteria() ->mergeWith

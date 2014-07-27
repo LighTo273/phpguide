@@ -23,7 +23,7 @@ if (preg_match('/\.(?:png|jpg|jpeg|gif|css|js|less|coffee|sass)$/', $_SERVER["RE
 
 
 // determine whether this is production environment
-$localIPs = ['::ffff:127.0.0.1', '::1', '127.0.0.1'];
+$localIPs = ['::ffff:127.0.0.1', '::1', '127.0.0.1', '33.33.33.1'];
 $production = !in_array( $_SERVER['REMOTE_ADDR'] , $localIPs);
 
 // Config path
@@ -33,6 +33,9 @@ $config = require __DIR__.'/protected/config/config.php';
 // add composer packages
 require __DIR__.'/protected/vendors/composerPackages/autoload.php';
 $diEnvironmentConf = 'production';
+
+// fix ip behind incapsula
+(new \Intval\IncapsulaIpFixer($_SERVER))->FixRemoteAddrInServerArray();
 
 if( !$production )
 {
@@ -52,11 +55,9 @@ if( !$production )
     $diEnvironmentConf='local';
 }
 
-// require __DIR__."/protected/config/di/{$diEnvironmentConf}.php";
-
-
 // use light version in production
 require_once($config['params']['PATH_TO_YII'].'/yii'.($production ? 'lite' : '').'.php');
+
 require_once(__DIR__.'/protected/sources/global_functions.php');
 Yii::createWebApplication($config)->run();
 

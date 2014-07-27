@@ -60,7 +60,7 @@ class PasswordRecovery extends DTActiveRecord
     private $recoveryUrl = 'PwRecovery/resetUrl?id=%s&key=%s';
 
 
-    public function requestRecovery($login, $email, $ip)
+    public function requestRecovery($login, $email, $ip, $sendEmail = true)
     {
         sleep(1); // prevent bruteforce
 
@@ -74,17 +74,19 @@ class PasswordRecovery extends DTActiveRecord
             return self::ERROR_INVALID_EMAIL;
 
         $this->createRecoveryRecord($user, $ip);
-        $this->sendRecoveryLetter($user);
+
+        if($sendEmail)
+            $this->sendRecoveryLetter($user);
 
         return self::ERROR_NONE;
     }
 
     private function createRecoveryRecord(User $user, $ip)
     {
-        $this->user = $user;
+        $this->userid = $user->id;
         $this->ip = $ip;
         $this->key = Helpers::randString(20);
-        $this->validity = new SDateTime('+1 hour');
+        $this->validity = new SDateTime('+7 day');
 
         if($this->save())
             return $this->id;
@@ -113,15 +115,17 @@ class PasswordRecovery extends DTActiveRecord
     public function recover($id, $key)
     {
         /** @var PasswordRecovery $pwr  */
-        $pwr = $this->with('user')->findByPk($id, ['key' => $key]);
+        $pwr = $this->findByPk($id, '`key`=:k',[':k' => $key]);
 
-        if($pwr->key !== $key)
+
+        if($pwr === null || $pwr->key !== $key)
             return self::ERROR_INVALID_KEY;
 
         if($pwr->validity < new DateTime())
             return self::ERROR_RECOVER_TIMEOUT;
 
         $pwr->user->authorize();
+        $pwr->delete();
         return self::ERROR_NONE;
     }
 

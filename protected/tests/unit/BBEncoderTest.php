@@ -12,8 +12,14 @@ class BBEncoderTest extends CTestCase
         <script>alert('hi');</script>
         [url=script:alert(document.cookie)]cool_url[/url]
 
-        [php]<?php echo 'hi';[/php]
+        [php]<?php echo 'hi1';[/php]
         [php]<script>alert(document.cookie);[/php]
+
+        [code=csharp]var x = list.FirstOrDefault().val ?? -1;[/code]
+
+        [code=javascript]
+            var x = document.window['x'];
+        [/code]
 
         [left]blabla[/left]
         [html]<span class='s'><abbr>aoeu</abbr></span>[/html]
@@ -28,6 +34,10 @@ class BBEncoderTest extends CTestCase
             <script type="text/javascript">stLight.options({ publisher:'18355ba4-a04c-4a33-a76f-847aadfc0f80', onhover:false });</script>
             <script type='text/javascript' src="http://www.micropoll.com/a/MicroPoll?id=3731518"></script>
         [/html]
+
+        @John
+        @Johs
+        myemail@gmail.com
 
 TEST;
 
@@ -58,11 +68,18 @@ TEST;
         $this->assertContains('<span class="underline">aoeu</span>', $result);
     }
 
-    public function testColorizedCodePresense()
+    public function testPHPTagParsedCorrectly()
     {
         $encoder = new BBencoder($this->exampleData, 'yo title', false);
         $result = $encoder -> GetParsedHtml();
-        $this->assertContains('<div class="php codeblock">', $result);
+        $this->assertContains('<div class="php codeblock"><span class="sy0">&lt;</span>script<span class="sy0">&gt;</span>alert<span class="br0">&#40;</span>document<span class="sy0">.</span>cookie<span class="br0">&#41;</span><span class="sy0">;</span></div>', $result);
+    }
+
+    public function testCodeCSharpTagParsedCorrectly()
+    {
+        $encoder = new BBencoder($this->exampleData, 'yo title', false);
+        $result = $encoder -> GetParsedHtml();
+        $this->assertContains('<div class="csharp codeblock"><span class="kw1">var</span> x <span class="sy0">=</span> list<span class="sy0">.</span><span class="me1">FirstOrDefault</span><span class="br0">&#40;</span><span class="br0">&#41;</span><span class="sy0">.</span><span class="me1">val</span> <span class="sy0">??</span> <span class="sy0">-</span><span class="nu0">1</span><span class="sy0">;</span></div>', $result);
     }
 
     public function testLeft()
@@ -132,6 +149,34 @@ TEST;
         $expected = 'תנסה לעשות <span dir="ltr">function yo(&$var) {echo "$var"; };</span> טוב';
         $actual = BBencoder::autoLtr($string);
         $this->assertEquals($expected, $actual);
+    }
+
+    public function testUserTag()
+    {
+
+        $src = '
+            @John
+            @another_test.case-name
+            @Joh#%$@@4
+            @#OOInvalidname
+            @@double
+            @a@b@c@d@e
+            myemail@gmail.com
+            #@shouldnt
+        ';
+
+        $expected = '<a href="/users/John">@John</a><br />            '.
+                    '<a href="/users/another_test.case-name">@another_test.case-name</a><br />            '.
+                    '@Joh#%$@@4<br />            '.
+                    '@#OOInvalidname<br />            '.
+                    '@@double<br />            '.
+                    '@a@b@c@d@e<br />            '.
+                    'myemail@gmail.com<br />            '.
+                    '#@shouldnt';
+
+        $encoder = new BBencoder($src, 'yo title', false);
+        $result = $encoder -> GetParsedHtml();
+        $this->assertEquals($expected, $result);
     }
 }
 

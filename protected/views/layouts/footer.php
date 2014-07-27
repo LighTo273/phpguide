@@ -6,24 +6,13 @@
 
 </div> <!-- /container -->
 
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"></script>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-resource.min.js"></script>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-cookies.min.js"></script>
 
-
-<script type='text/javascript'>
-    var scr = false, _gaq;
-    function load(js)
-    {
-        var node = document.createElement('script');
-        node.type = 'text/javascript'; node.async = true; node.src = js;
-        var scriptTags = document.getElementsByTagName('script');
-        if(!scr ) scr = scriptTags[scriptTags.length-1];
-        scr.parentNode.insertBefore(node, scr);
-    }
-
-   _gaq = _gaq || []; _gaq.push(['_setAccount', 'UA-18788673-3']); _gaq.push(['_trackPageview']);
-   load('http://www.google-analytics.com/ga.js');
-</script>
-
-
+<!-- Witget.com start-->
+<script type="text/javascript"> var gaJsHost = (("https:" == document.location.protocol) ? "https://" : "http://"); document.write(unescape("%3Cscript src='" + gaJsHost + Math.floor(Math.random() * 100)+".loader.witget.com/' type'text/javascript'%3E%3C/script%3E")); </script>
+<!-- Witget.com end-->     
 
 </body>
 </html>

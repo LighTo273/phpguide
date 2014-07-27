@@ -59,6 +59,7 @@ function comment_sumbitted_callback(response)
     	show_comments_alert('תגובתך נוספה! תודה', 'ok');
         jQuery('#post_comments').append ( response  );
         jQuery('#commenttext').val('');
+        if($('form').sisyphus !== undefined) $('form').sisyphus().manuallyReleaseData();
     }
     
     jQuery('#comments_form').show();
@@ -145,6 +146,12 @@ function disable_new_question_form(xhr)
 		alert('נושא השאלה חייב להיות בעורך של חמישה תווים לפחות');
 		return false;
 	}
+
+    if( $.trim(jQuery('#forum_question_text').val()).length < 5 )
+    {
+        alert('תוכן השאלה לא הכי אינפורמטיבי');
+        return false;
+    }
 	
     jQuery('#forum_question_text').prop('disabled', true);
     jQuery('#forum_question_subject').prop('disabled', true);
@@ -153,11 +160,31 @@ function disable_new_question_form(xhr)
 
 function new_question_submitted_callback(response)
 {
-    jQuery('#forum_question_text').prop('disabled', false).val('');
-    jQuery('#forum_question_subject').prop('disabled', false).val('');
-    
-    if ( response.substr(0, 5) === 'err::') alert(response.substr(5));
-    else document.location =  response; 
+    var textField = jQuery('#forum_question_text');
+    var subjectField = jQuery('#forum_question_subject');
+
+    if ( response.substr(0, 5) === 'err::')
+    {
+        textField.prop('disabled', false);
+        subjectField.prop('disabled', false);
+        alert(response.substr(5));
+    }
+    else
+    {
+        textField.val('');
+        subjectField.val('');
+
+        var newPostForm = textField.parent('form');
+
+        if(typeof(newPostForm.sisyphus) != 'undefined')
+        {
+            console.log('cleaning;');
+            newPostForm[0].reset();
+            newPostForm.sisyphus().manuallyReleaseData();
+        }
+
+        document.location =  response;
+    }
 }
 
 
@@ -174,6 +201,7 @@ function unauth_message(type)
 	var qnaQuestion = 'לקבל תשובות לשאלה שלך';
 	var qnaAnswer = 'לענות על השאלה';
 	var vote = 'לדרג';
+    var contest = 'להשתתף';
 	var default1 = 'לעשות את זה';
 	
 	switch (type)
@@ -183,7 +211,8 @@ function unauth_message(type)
 		case 'qnaQuestion'	: show_unauth_message(qnaQuestion, true); break;
 		case 'qnaAnswer'	: show_unauth_message(qnaAnswer, true); break;
 		case 'vote' 		: show_unauth_message(vote, false); break;
-		default				: show_anauth_message(default1, true); 
+		case 'contest' 		: show_unauth_message(contest, false); break;
+		default				: show_unauth_message(default1, true);
 	}
 }
 
@@ -232,12 +261,34 @@ function getStyle(a,b){var c=jQuery(a);if(c.currentStyle)return c.currentStyle[b
 
 
 
+/**************************************************************************/
+/*************************** General Functions ****************************/
+/**************************************************************************/
 
 
 
+var scr = false;
+function load(js, callback)
+{
+    var node = document.createElement('script');
+    
+    node.type = 'text/javascript'; 
+    node.async = true; 
+    node.src = js;
+
+    if(isFunction(callback))
+        node.onload = callback;
+
+    var scriptTags = document.getElementsByTagName('script');
+    if(!scr ) scr = scriptTags[scriptTags.length-1];
+    scr.parentNode.insertBefore(node, scr);
 
 
-
+    function isFunction(obj) {
+        var getType = {};
+        return obj && getType.toString.call(obj) === '[object Function]';
+    }
+}
 
 
 
@@ -312,78 +363,22 @@ function getStyle(a,b){var c=jQuery(a);if(c.currentStyle)return c.currentStyle[b
 	        		function(){$('#ratingWidgetHelp').stop(true, true).fadeOut();}
 	        );
     	};
-    	
+    	/*
     	// protect all form inputs with sisyphus
-    	$('form').sisyphus({onRestore: function(){
-    		
-    		if($('#forum_question_subject').length > 0) 
-    			expand_forum_question_textarea();
-    		
-    	}});
+    	$('form').sisyphus({
+
+            locationBased: true,
+            excludeFields: $("[data-sisyphus='exclude'], [name='YII_CSRF_TOKEN']"),
+            onRestore: function(){
+                if($('#forum_question_subject').length > 0)
+                    expand_forum_question_textarea();
+    		}
+        });
+        */
+        /* Timeago plugin */
+        jQuery("time.timeago").timeago();
     	
     })();
-
-
-
-
-
-
-
-
-
-
-
-window.onload = function() 
-{
-    // postphoning the social buttons loading till everything else is loaded
-    // least priority ;)
-    window.setTimeout(function()
-    {
-        win_height = getWindowHeight();
-        var loc = window.location.protocol + '//' + window.location.hostname;
-
-        jQuery('#social_buttons').html
-        (
-        	'<div class="g-plusone" data-size="medium" data-href="'+loc+'"></div><br/>'+
-            '<iframe  class="fb-like-frame" src="' + 
-            'http://www.facebook.com/plugins/like.php?href=' + encodeURIComponent(loc).
-
-            replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
-            replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+') +
-
-            '&amp;layout=button_count&amp;show_faces=false&amp;width=150&amp;locale=en_US&amp;' + 
-            'action=like&amp;font&amp;colorscheme=light&amp;height=21"' +
-            '></iframe>'
-
-        );
-
-        load('https://apis.google.com/js/plusone.js');
-
-        if(jQuery('#like_for_concrete_post').length > 0)
-        {
-        	var loc2 = encodeURIComponent(loc + '/' + window.location.pathname).
-            replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
-            replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
-        	
-        	
-            jQuery('#like_for_concrete_post').html
-            (
-                '<iframe  class="fb-like-frame fb-like-frame-box" src="' + 
-                'http://www.facebook.com/plugins/like.php?href=' + loc2 +
-
-                '&amp;layout=box_count&amp;show_faces=false&amp;width=150&amp;locale=en_US&amp;' + 
-                'action=like&amp;font&amp;colorscheme=light&amp;height=21"' +
-                '></iframe>'
-            );
-            
-            jQuery('#plusone_for_concrete_post').html('<div class="g-plusone" data-size="tall" data-href="'+loc + '/' + window.location.pathname+'"></div>');
-        }
-
-
-    }, 3000);
-}
-
-
 
 
 

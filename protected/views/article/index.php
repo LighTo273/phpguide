@@ -1,4 +1,10 @@
-
+<?php
+/** @var $currentLoggedInUserEmail string */
+/** @var $currentUserFirstName string */
+/** @var $articleCategory string */
+/** @var $article Article */
+/** @var $tweetText string */
+?>
     <h1 class='content-title'><span></span><?=e($article->title);?></h1>
     
     <!-- publisher -->
@@ -26,37 +32,72 @@
     </article>
     
     <br/><br/>
-    <br/><br/>
-    
-    <hr/>
-   
-   
-    <div style="margin-top:15px;position:relative;">
-    	<div class='likeus'></div>
-        <div class="right" style="padding:5px; font-size: 85%;line-height: 16px; margin-bottom: 25px;  width:400px">
-           
-        <img src="/static/images/pixel.gif" title="<?php $this->widget('GravatarWidget', array('email' => $article->author->email, 'size' => 50, 'linkOnly' => true)); ?>" alt="<?=e($article->author->login)?>" width="50" height="50" class="right"/>
-        <p style=" margin-right:10px; width:245px" class="right">
-            על המחבר:
-          
-            <b><a href='<?=bu('users/').urlencode($article->author->login)?>'><?=e($article->author->login)?></a></b>             
-        </p>
+
+
+    <div class="info_box" data-ng-controller="PostViewCtrl">
+
+        <div class="right left-spaced">
+
+            <img
+                src="/static/images/pixel.gif"
+                title="<?php $this->widget('GravatarWidget', ['email' => $article->author->email, 'size' => 16, 'linkOnly' => true]); ?>"
+                alt="<?=e($article->author->login)?>"
+             />
+
+            <a href="<?= bu('users/'.e($article->author->login))?>"><?=e($article->author->login)?></a>
+        </div>
+
+        <div class="right left-spaced">
+            <a
+               title="להעלות לכתבה את הרייטינג"
+               class="{{ hasAlreadyVoted ? 'inactive' : 'active' }}"
+               data-ng-click="vote('up')" ><i class="icon-upload icon-{{ hasAlreadyVoted ? 'inactive' : 'white active' }} rating-up" ></i></a>
+            <span>{{ postRating }}</span>
+            <a  title="להוריד לכתבה את הרייטינג"
+                data-ng-click="vote('down')"><i class="icon-download icon-{{ hasAlreadyVoted ? 'inactive' : 'white active' }} rating-down"></i></a>
+        </div>
+
+        <div class="right left-spaced">
+            <i class="icon-eye-open"></i> <?=$article->GetViewsCount()?>
+        </div>
+
+        <div class="right left-spaced">
+            <a href="https://www.facebook.com/sharer/sharer.php?u=<?=bu('posts/'.$article->id)?>" class="post-share-btn share-on-facebook-16-16"></a>
+            <a href="http://twitter.com/intent/tweet?text=<?=urlencode($tweetText)?>" class="post-share-btn share-on-twitter-16-16"></a>
+            <a href="https://plus.google.com/share?url=<?=bu('posts/'.$article->id)?>" class="post-share-btn share-on-gplus-16-16"></a>
+            <div class="clear"></div>
+        </div>
+
         <div class="clear"></div>
     </div>
-        
-        <div  id="like_for_concrete_post" class="left" style="margin:10px  0 0 10px;width:50px;"></div>
-        <div  id="plusone_for_concrete_post" class="left" style="margin:10px  0 0 10px;"></div>
-        <div class='clear'></div>
-    
+
+
+    <div>
     	<?php  if(!Yii::app()->user->isguest && ($article->author->id === Yii::app()->user->id || Yii::app()->user->is_admin)):  ?>
-	        <div><a href="<?= bu('Add?edit='.$article->id)?>">Edit this article</a></div>
+            <br/><br/>
+            <hr/>
+	        <div><a href="<?= bu('Add?edit='.$article->id)?>">Edit this article</a></div><br/>
 	        <div class='clear'></div>
         <?php endif; ?>
 
-        <?php  if(!Yii::app()->user->isguest && Yii::app()->user->is_admin):  
-        	$action =  $article->approved ? 'disapprove' : 'approve';
-        ?>
-            <div><a href="<?= bu('Add/'.$action.'?id='.$article->id)?>"><?=ucfirst($action)?> the publication</a></div>
+        <?php
+        if(!Yii::app()->user->isguest && Yii::app()->user->is_admin): ?>
+
+            <div>
+                <? if($article->approved != Article::APPROVED_PUBLISHED) { ?>
+                    <a href="<?= bu('Add/approve?id='.$article->id)?>">Approve for homepage</a><br/>
+                <? }
+                   if($article->approved != Article::APPROVED_SANDBOX){
+                ?>
+                    <a href="<?= bu('Add/send2Sandbox?id='.$article->id)?>">Send to Sandbox</a><br/>
+                <? } else { ?>
+                    Currently in sandbox<br/>
+                <? }
+                   if($article->approved != Article::APPROVED_NONE){
+                ?>
+                    <a href="<?= bu('Add/disapprove?id='.$article->id)?>">Disapprove the publication</a>
+                <? } ?>
+            </div>
             <div class='clear'></div>
         <?php endif; ?>
     </div>

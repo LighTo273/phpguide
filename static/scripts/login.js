@@ -46,7 +46,8 @@ var login =
 		    $.trim($('#regmail').val()) == '' 
 		)
 		{
-		    xhr.abort(); 
+		    xhr.abort();
+            window.Analytics.track('registration', 'failed', 'Empty Input');
 			
 		    $('#regResult').html(
 		    'יש למלא את כל השדות'
@@ -62,10 +63,12 @@ var login =
     {
 		if(data != 'ok')
 		{
+            window.Analytics.track('registration', 'failed', data);
 		    $('#regResult').html(data).show();
 		}
 		else
 		{
+            window.Analytics.track('registration', 'success');
 		    window.location = redirect_after_login_to ;
 		}
     },
@@ -88,7 +91,7 @@ var login =
     recoverySuccess: function(data)
     {
     	$('#recoverBtn').removeAttr('disabled');
-    	$('#result').html(data).show().addClass('alert alert-success');
+    	$('#result').html(data).show().removeClass('hidden').addClass('alert alert-success');
     },
     
     passwordChangeSubmitted: function(xhr)
@@ -122,6 +125,7 @@ var login =
         if(!valid)
         {
             resultDiv.html('יש להזין את כל השדות').show();
+            window.Analytics.track('registration', 'failed', 'Empty Input');
             return;
         }
 
@@ -129,9 +133,15 @@ var login =
         $.post('login/register', data.serialize(), function(ret){
 
             if(ret === 'ok')
+            {
+                window.Analytics.track('registration', 'success');
                 window.location = redirect_after_login_to;
+            }
             else
+            {
+                window.Analytics.track('registration', 'failed', ret);
                 resultDiv.html(ret).show();
+            }
 
         });
 

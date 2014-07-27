@@ -2,33 +2,24 @@
 /*** @var $this PHPGController */
 /*** @var $qnas array */
 /*** @var $articles array */
-
-$blogpostCacheAttrs = [
-    'duration' => 400,
-    'dependency' =>[
-        'class'=>'system.caching.dependencies.CDbCacheDependency',
-        'sql'=>Article::getCacheDependencySql()
-    ]
-];
-
+/** @var $paginationCurrentPage integer */
+/** @var $paginationTotalPages integer */
 ?>
 
-<?php $this->renderPartial('//qna/newQuestionForm') ?>
-
-<section class='clearfix homepage-qna'>
-    <?php  $this->renderPartial('//qna/homeQnaList', array('qnas' => &$qnas)) ?>
-</section>
-
-<div class="homepage-banner">
-    פרסם כאן
+<div class="lastActiveQuestions">
+    <?
+    if($paginationCurrentPage == 1)
+        $this->widget('forum.components.LastActiveTopicsWidget', ['count' => 6]); ?>
 </div>
-
-<?php if($this->beginCache('HomepageBlogpostsFragmentCache', $blogpostCacheAttrs)) { ?>
 
 <div class='homepage-articles'>
-<?php  $this->renderPartial('//article/homepageArticlesList',
-            array('articles' =>  $articles )); ?>
-&larr; <a href='<?=bu('Article/All')?>'>כל הפוסטים</a>
-</div>
 
-<?php $this->endCache(); } ?>
+<?=
+    $this->renderPartial('//article/allArticles', [
+        'articles'     => $articles,
+        'paginationTotalPages' => $paginationTotalPages,
+        'paginationCurrentPage' => $paginationCurrentPage
+    ]);
+?>
+
+</div>

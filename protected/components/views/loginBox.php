@@ -28,8 +28,9 @@ var isguest = <?=Yii::app()->user->isguest ? 'true' : 'false' ?>;
 		<div class='clear'></div>
 	</div>
 	<div class="action">
-		<a href="<?= bu('Add')?>">הוסף פוסט</a>
+		<a href="<?= bu('Add')?>">הוסף כתבה לאתר</a>
 	</div>
+    <a href="<?=bu('login/logout')?>" class='logout icon-remove' title="התנתקות"></a>
 </section>
 
 
@@ -76,9 +77,9 @@ var isguest = <?=Yii::app()->user->isguest ? 'true' : 'false' ?>;
 								
 				
 				<br/><br/>
-					<a href='<?= Yii::app() ->createUrl('login/externalLogin', array('service' => 'facebook', 'backto' => Yii::app()->request->url)); ?>' class='sign_in_with_facebook_long'></a>
+					<a href='<?= Yii::app() ->createUrl('loginExternal/login', array('service' => 'facebook', 'backto' => Yii::app()->request->url)); ?>' class='sign_in_with_facebook_long'></a>
 					<br/>
-					<a href='<?= Yii::app() ->createUrl('login/externalLogin', array('service' => 'google', 'backto' => Yii::app()->request->url)); ?>' class='sign_in_with_google_long'></a>
+					<a href='<?= Yii::app() ->createUrl('loginExternal/login', array('service' => 'google', 'backto' => Yii::app()->request->url)); ?>' class='sign_in_with_google_long'></a>
 				<br/>
 				לאחר הלחיצה תועבר לעמוד בחירת שם משתמש לאתר ולאחר מכן תגיע חזרה לכאן.
 				

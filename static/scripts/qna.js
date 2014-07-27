@@ -48,6 +48,7 @@ var qna =
     clearAnswerText: function()
     {
     	$('#message').val('');
+        if($('form').sisyphus !== undefined) $('form').sisyphus().manuallyReleaseData();
     },
 
     appendAnswer: function(text)
@@ -88,7 +89,6 @@ var qna =
     	$('.qnaCommentForm').remove();
     	$('#' + qna.editedId).show().replaceWith(data);
     	qna.editedId = false;
-
     },
 
 
@@ -129,6 +129,7 @@ var qna =
 
     editQuestionSuccess : function(data)
     {
+        if($('form').sisyphus !== undefined) $('form').sisyphus().manuallyReleaseData();
     	document.location  = data;
     },
 
@@ -153,7 +154,7 @@ var qna =
     		jQuery.ajax({
     			'success':qna.editSuccess,
     			'beforeSend':qna.editSent,
-    			'type':'POST','url':'/Qna/answer','cache':false,
+    			'type':'POST','url':'/qna/answer','cache':false,
     			'data':jQuery(this).parents("form").serialize()});
 
     		return false;
@@ -178,7 +179,7 @@ var qna =
     		{
 	    		jQuery.ajax({
 	    			'success':qna.editQuestionSuccess,
-	    			'type':'POST','url':'/Qna/new',
+	    			'type':'POST','url':'/qna/new',
 	    			'cache':false,'data':jQuery(this).parents("form").serialize()});
     		}
     		return false;

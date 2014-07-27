@@ -34,6 +34,11 @@ return array(
         'ext.yii-mail.YiiMailMessage'
 	),
 
+    'registerPathAliases' => function()
+    {
+        $protectedDirPath = realpath(__DIR__.'/../');
+        Yii::setPathOfAlias('phpg', $protectedDirPath);
+    },
 
 	// application components
 	'components'=>array
@@ -125,7 +130,18 @@ return array(
             'transportType' => 'smtp',
             'viewPath' => 'application.views.emails',
             'logging' => true,
-            'dryRun' => false
+            'dryRun' => false,
+
+            // Uncomment if you want to use mandrill as well
+            /*
+            'transportOptions' =>
+            [
+                'username' => '...',
+                'password' => '...',
+                'host' => 'smtp.mandrillapp.com',
+                'port' => 587
+            ]
+            */
         ),
 
                 'widgetFactory' => array
@@ -150,11 +166,22 @@ return array(
 	'params'=>array
     (
         'adminEmail'=>'some1@localhost',
+        'contactMail' => 'some1@localhost',
         'login_remember_me_duration' => 31536000,
 
         // indicates what would be the 'from' address for mails sent by the site
         // email => name ( like:   mysiteBot<noreply@mysite.com> )
         'emailFrom' => ['noreply@mysite.com' => 'mysiteBot'],
+
+        // api key for mailchimp.com
+        'mailchimpApiKey' => null,
+        'mailchimpListId' => null,
+
+        // paypal
+        'paypalReceiverEmail' => 'paypal@email.com',
+        'products' => [
+            'iceCream' => ['price' => 9.90, 'pathToFile' => '/home/icecream.txt'],
+        ],
 
         /******************************************************/
         /**** This is production path, above public_html ******/

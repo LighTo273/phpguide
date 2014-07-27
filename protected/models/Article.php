@@ -10,18 +10,28 @@
  * @property string $image
  * @property string $html_desc_paragraph
  * @property string $html_content
- * @property string $pub_date
+ * @property SDateTime $pub_date
  * @property string $keywords
  * @property string $description
  * @property integer $approved
  * @property integer $author_id
+ * @property Category[] $categories
  */
 class Article extends DTActiveRecord
 {
-	/**
-	 * Returns the static model of the specified AR class.
-	 * @return Article the static model class
-	 */
+
+    const APPROVED_PUBLISHED = 2;
+    const APPROVED_SANDBOX = 1;
+    const APPROVED_NONE = 0;
+
+    /** @var \RedisDao\PostDAL $redisDal */
+    protected static $redisDal = null;
+
+    /**
+     * Returns the static model of the specified AR class.
+     * @param string $className
+     * @return Article the static model class
+     */
 	public static function model($className=__CLASS__)
 	{
 		return parent::model($className);
@@ -44,7 +54,7 @@ class Article extends DTActiveRecord
 		// will receive user inputs.
 		return array(
 			array('title, keywords, description', 'required'),
-                        array('image', 'url', 'allowEmpty' => true),
+            array('image', 'url', 'allowEmpty' => true),
 			array('title', 'length', 'max'=>150),
 			array('url, image', 'length', 'max'=>255)
 		);
@@ -57,12 +67,13 @@ class Article extends DTActiveRecord
 	{
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
-		return array(
-                    'author'        => array(self::BELONGS_TO, 'User',     'author_id'),
-                    'comments'      => array(self::HAS_MANY,   'Comment',  'blogid'),
-                    'plain'         => array(self::HAS_ONE,    'ArticlePlainText', 'id'),
-                    'categories'    => array(self::MANY_MANY,  'Category', 'blog_post2cat(postid, catid)'),
-                    'commentsCount' => array(self::STAT,        'Comment',  'blogid')
+		return array
+        (
+            'author'        => array(self::BELONGS_TO, 'User',     'author_id'),
+            'comments'      => array(self::HAS_MANY,   'Comment',  'blogid'),
+            'plain'         => array(self::HAS_ONE,    'ArticlePlainText', 'id'),
+            'categories'    => array(self::MANY_MANY,  'Category', 'blog_post2cat(postid, catid)'),
+            'commentsCount' => array(self::STAT,       'Comment',  'blogid')
 		);
 	}
 
@@ -81,19 +92,25 @@ class Article extends DTActiveRecord
 
         public function defaultScope()
         {
-            $condition = 'blog.approved=1';
-            
+            if(Yii::app() instanceof CConsoleApplication)
+                return [];
+
+            $condition = 'blog.approved != '.self::APPROVED_NONE;
+
             // allow poster to see his post
             $userid = Yii::app()->user->id;
-            (Yii::app()->user->isguest || null === $userid) ?: $condition .= " OR author_id = $userid";
-            
+
+            if(!Yii::app()->user->isguest && null !== $userid)
+                $condition .= " OR author_id = $userid";
+
             // admins can see anything
-            if(!Yii::app()->user->isguest && Yii::app()->user->is_admin) $condition = '';
+            if(!Yii::app()->user->isguest && Yii::app()->user->is_admin)
+                $condition = '';
             
             return array
             ( 
-                'condition' =>  $condition  ,
-                'order'     =>  'pub_date DESC',
+                'condition' => $condition  ,
+                'order'     => 'pub_date DESC',
             	'alias'		=> 'blog',
                 'with'      => array
                 (
@@ -113,7 +130,20 @@ class Article extends DTActiveRecord
             $this->getDbCriteria()->mergeWith( array('limit' => $per_page, 'offset' => $page * $per_page) );
             return $this;
         }
-  
+
+        public function orderByField($field, array $values)
+        {
+            $this->getDbCriteria()->mergeWith( ['order' => "FIELD($field, ".join(',', $values).")"] );
+            return $this;
+        }
+
+        public function publishedOnly()
+        {
+            if(Yii::app()->user->isguest || !Yii::app()->user->is_admin)
+                $this->getDbCriteria()->mergeWith(['condition' => "blog.approved = ".self::APPROVED_PUBLISHED]);
+
+            return $this;
+        }
         
         public function byCat($name)
         {
@@ -156,5 +186,39 @@ class Article extends DTActiveRecord
         return 'SELECT pub_date FROM '.self::model()->tableName().
                ' ORDER BY pub_date DESC LIMIT 1';
     }
-        
+
+
+    protected static function GetRedisDal()
+    {
+        if(null === self::$redisDal)
+            self::$redisDal = new \RedisDao\PostDAL(Yii::app()->redis);
+
+        return self::$redisDal;
+    }
+
+
+    public function GetRating()
+    {
+        return self::GetRedisDal()->GetPostRating($this->id);
+    }
+
+    public function GetViewsCount()
+    {
+        return self::GetRedisDal()->GetPostViewsCount($this->id);
+    }
+
+    public function IncrementViewsCount($incr = 1)
+    {
+        return self::GetRedisDal()->IncrementPostViewsCount($this->id, $incr);
+    }
+
+    public function IncrementRating($incr = 1, $userid = null)
+    {
+        return self::GetRedisDal()->IncrementPostRating($this->id, $incr, $userid);
+    }
+
+    public function HasUserVoted($userid)
+    {
+        return self::GetRedisDal()->HasUserVoted($this->id, $userid);
+    }
 }
